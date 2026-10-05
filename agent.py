@@ -21,10 +21,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from bootcamp_agent.agent import AgentResult, answer_question
+from bootcamp_agent.agent import AgentResult, TraceEvent, answer_question, REFUSAL_TEXT
 from bootcamp_agent.config import load_settings
 from bootcamp_agent.documents import Document, load_corpus
 from bootcamp_agent.llm import LLMClient, get_client
+from bootcamp_agent.retrieval import retrieve
 from bootcamp_agent.schema import ResearchAnswer
 from bootcamp_agent.tools import Tool, build_tools
 
@@ -51,7 +52,18 @@ class YourAgent:
         self.tools: dict[str, Tool] = build_tools(self.documents, self.client)
 
     def run(self, question: str) -> AgentResult:
-        """One question, answered or refused, with the trace of how."""
+        found = retrieve(question, self.documents, top_k=3)
+        if not found or found[0].score < 3.0:
+            answer = ResearchAnswer(
+                answer=REFUSAL_TEXT,
+                citations=(),
+                confidence=0.0,
+                needs_human_review=True,
+            )
+            return AgentResult(
+                answer=answer,
+                trace=(TraceEvent("decision", "weak evidence; refused without an LLM call"),),
+            )
         return answer_question(
             question,
             self.documents,
