@@ -4,30 +4,32 @@
 loop or graph, and the model calls each one cost). The four fields are the
 ones `ch10-e2` reads.
 
-- Status: <!-- write this: proposed | accepted | superseded by ADR NNNN -->
-- Date: <!-- write this -->
+- Status: accepted
+- Date: 2026-10-05
 
 ## Context
 
-<!-- write this: what forced a choice, and the model-call count you measured
-for each shape in session 8. -->
+Each practice question is one retrieve, then zero or one model call. Traces
+show `[llm_call] attempt 1` or `refused without an LLM call`. A loop would
+add extra calls per question without a measured gain on this corpus.
 
 ## Decision (`decision`)
 
-<!-- write this: one sentence phrased as a choice ("we keep the chain in
-agent.py"), not as a description of the code. -->
+We keep the chain in `agent.py`: retrieve → (optional) one model call → check citations.
 
 ## Options considered (`options_considered`)
 
-1. <!-- write this: the option you took -->
-2. <!-- write this: the option you turned down -->
+1. Chain (taken): retrieve, at most one `complete`, then citation check.
+2. Loop (turned down): extra model/tool rounds until a budget runs out.
 
 ## Why not the other option (`why_not`)
 
-<!-- write this: the reason it lost, today. The reason, not the verdict. -->
+A loop costs more model calls per question. On the practice traces a passing
+grounded answer already uses one call; refusals use zero. Extra rounds would
+spend Nebius credits without a measured lift on `claim_support`.
 
 ## What would reverse it (`reverses_it`)
 
-<!-- write this: a measurement with a number and a unit, e.g. "when a question
-needs more than 2 model calls in 10 of the golden cases". "When it gets slow" is
-an opinion, not a trigger. -->
+When more than 2 model calls are needed in 10 of 10 practice questions
+(`uv run bootcamp final trace` shows `attempt 2` or a second `llm_call`)
+and the practice score is still below 30% with every critical FAIL.

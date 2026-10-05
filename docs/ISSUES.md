@@ -21,5 +21,5 @@ The columns are the three fields `cap01-e5` reads.
 ## Rank 1, in progress
 
 - The fix: in `agent.py` `run`, `retrieve` then refuse with `REFUSAL_TEXT` when there is no chunk or `found[0].score < 3.0`. After: `fa-09` PASS, trace `weak evidence; refused without an LLM call`.
-- The regression test: still skipped — write `test_regression_rank_1_of_the_issue_list` in `tests/test_contract.py`.
+- The regression test: `test_regression_rank_1_of_the_issue_list` in `tests/test_contract.py` (green).
 - Before and after: see [EVAL_REPORT.md](EVAL_REPORT.md).

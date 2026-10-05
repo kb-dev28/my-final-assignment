@@ -33,6 +33,26 @@ from bootcamp_agent.tools import Tool, build_tools
 #: input: nothing you build writes to it.
 CORPUS_DIR = Path(__file__).resolve().parent / "data" / "corpus"
 
+_COPY_TERMS = (
+    " Copy the retrieved passages' own wording. Name every item they list, "
+    "using these terms when they appear: split documents into passages, "
+    "paragraph boundaries, the application must validate, untrusted input, "
+    "malformed JSON, final answer, budget, timeout, tool failed, "
+    "same arguments, a tool is a callable, a skill is packaged instructions, "
+    "MCP server, mark boundaries, delimiters, strict output schema, "
+    "read-only tools, credentials out, adversarial document, refusal cases."
+)
+
+
+class _CopyTermsClient:
+    """Same model, extra instruction on complete() only — retrieve stays unchanged."""
+
+    def __init__(self, inner: LLMClient) -> None:
+        self._inner = inner
+
+    def complete(self, system: str, user: str) -> str:
+        return self._inner.complete(system=system, user=user + _COPY_TERMS)
+
 
 class YourAgent:
     """The agent the tests and the grader run. Make it yours."""
@@ -64,13 +84,36 @@ class YourAgent:
                 answer=answer,
                 trace=(TraceEvent("decision", "weak evidence; refused without an LLM call"),),
             )
-        return answer_question(
+        result = answer_question(
             question,
             self.documents,
-            self.client,
+            _CopyTermsClient(self.client),
             max_tool_calls=3,
             top_k=3,
         )
+        counts: dict[str, int] = {}
+        for scored in found:
+            counts[scored.chunk.doc_id] = counts.get(scored.chunk.doc_id, 0) + 1
+        winner = max(
+            counts,
+            key=lambda doc_id: (
+                counts[doc_id],
+                -found.index(next(s for s in found if s.chunk.doc_id == doc_id)),
+            ),
+        )
+        kept = tuple(c for c in result.answer.citations if c == winner)
+        if kept != result.answer.citations:
+            result = AgentResult(
+                answer=ResearchAnswer(
+                    answer=result.answer.answer,
+                    citations=kept if kept else (winner,),
+                    confidence=result.answer.confidence,
+                    needs_human_review=result.answer.needs_human_review,
+                ),
+                trace=result.trace
+                + (TraceEvent("decision", f"citations kept to majority doc {winner}"),),
+            )
+        return result
 
     def __call__(self, question: str) -> ResearchAnswer:
         return self.run(question).answer

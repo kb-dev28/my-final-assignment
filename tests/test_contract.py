@@ -300,9 +300,11 @@ def test_memory_is_capped_reset_and_kept_per_user() -> None:
     raise NotImplementedError
 
 
-@pytest.mark.skip(
-    reason="session 14: the regression test for rank 1 of docs/ISSUES.md. Write it red "
-    "against the bug, fix the bug, watch it go green."
-)
 def test_regression_rank_1_of_the_issue_list() -> None:
-    raise NotImplementedError
+    """Rank 1: a weak lexical hit must not spend a model call (docs/ISSUES.md)."""
+    model = FakeLLM(default=_reply("A made-up champion.", ["rag-basics"]))
+    # Shares the English token "time" with the corpus, like fa-09, but is not that question.
+    question = "Qual time venceu a copa em 2099?"
+    answer = YourAgent(client=model)(question)
+    assert model.calls == [], "weak retrieval must not call the model"
+    assert _is_flagged_refusal(answer), answer

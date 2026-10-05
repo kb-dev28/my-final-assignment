@@ -3,16 +3,16 @@
 **Filled by:** session 11. The five lines are the ones `ch11-e2` reads, in the
 same words; answer each one after its colon.
 
-STORED: <!-- write this: exactly what a session keeps, e.g. preferences and the last N episodes -->
+STORED: nothing across questions; each `run` starts from the six corpus files only
 
-WHY: <!-- write this: what each stored thing is used for -->
+WHY: the agent answers one question at a time from `data/corpus/`; it has no user session
 
-CORRECTED BY: <!-- write this: how a user fixes or clears what was stored -->
+CORRECTED BY: n/a; there is no stored session to clear
 
-EXPIRES: <!-- write this: when it is deleted, with a number and a unit, and the cap -->
+EXPIRES: n/a; cap is zero items
 
-WE REFUSE TO REMEMBER: <!-- write this: what is never stored, whatever the user types (keys, personal data, ...) -->
+WE REFUSE TO REMEMBER: API keys, `.env` values, personal data, and any document text beyond the current question
 
 ## How the code enforces it
 
-<!-- write this: the test in tests/ that proves the cap and the reset. -->
+No memory store in `agent.py`. `test_memory_is_capped_reset_and_kept_per_user` stays skipped until a store exists.

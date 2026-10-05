@@ -1,14 +1,16 @@
 # my-final-assignment
 
-<!-- write this: one sentence. What it answers, from what, and what it does when
-the sources say nothing. -->
+A research assistant that answers developer questions from the six documents in
+`data/corpus/`, cites the document it used, and refuses when those files do not support the question.
 
 ![check](https://github.com/kb-dev28/my-final-assignment/actions/workflows/check.yml/badge.svg)
 
 ## The problem
 
-<!-- write this: who has the problem, and what goes wrong for them today. Two to
-four sentences: minute 1 of your demo, in writing. -->
+People ask coding-assistant questions and get fluent answers with no way to
+check the source. If the corpus is silent, the model still invents. This repo
+is the agent in the middle: retrieve, maybe one model call, then a citation
+check or a refusal.
 
 ## Demo
 
@@ -18,33 +20,41 @@ Two runs, pasted exactly as the commands printed them. Never an edited one.
 ### One supported answer
 
 ```bash
-uv run bootcamp capstone trace "How does chunking work in RAG?"
+uv run bootcamp final trace "How does chunking work in RAG?"
 ```
 
 ```text
-<!-- paste this: the output. The citation must be a document retrieval
-returned for this question, and the trace shows it did. -->
+[retrieve] top_k=2 -> [('rag-basics', 1), ('rag-basics', 2)]
+[llm_call] attempt 1: 285 chars
+[decision] answered with citations ['rag-basics']
+
+answer: Chunking in RAG splits documents into passages small enough to be individually relevant, and it is better to respect paragraph boundaries rather than cut at a fixed character count mid-sentence.
+citations: ['rag-basics']
+confidence: 1.0
+needs_human_review: False
 ```
 
 ### One refusal
 
 ```bash
-uv run bootcamp capstone trace "What is the capital city of Mongolia?"
+uv run bootcamp final trace "What is the capital city of Mongolia?"
 ```
 
 ```text
-<!-- paste this: the output. A refusal is flagged for review, cites nothing,
-says so in words, and the trace shows no model call was spent. -->
+[decision] weak evidence; refused without an LLM call
+
+answer: I don't know based on the provided corpus.
+citations: []
+confidence: 0.0
+needs_human_review: True
 ```
 
 ## Architecture
 
-<!-- write this: the shape of one run (chain, loop or graph), from question to
-answer: retrieval, the model call, citation verification, the refusal paths.
-Name the model calls one question costs. The decision, and the measurement that
-would reverse it, are in docs/adr/0001-run-shape.md. -->
-
-See [docs/adr/0001-run-shape.md](docs/adr/0001-run-shape.md).
+One run is a **chain**: retrieve → refuse if the best chunk score is `< 3.0` →
+otherwise one model call → drop citations the retriever did not return.
+Cost: 0 or 1 model call. Decision and reversal trigger:
+[docs/adr/0001-run-shape.md](docs/adr/0001-run-shape.md).
 
 ## Measured results
 
@@ -54,17 +64,17 @@ fake model's.
 
 | What | Command | Model | Result |
 |---|---|---|---|
-| Contract tests | `uv run pytest` | fake | <!-- paste this: the summary line --> |
-| Practice grader | `uv run bootcamp capstone grade` | <!-- write this --> | <!-- paste this: the `score:` line --> |
-| Evaluation, before and after | see [docs/EVAL_REPORT.md](docs/EVAL_REPORT.md) | <!-- write this --> | <!-- paste this: the two pass rates --> |
+| Contract tests | `uv run pytest` | fake | `5 passed, 1 skipped, 3 xfailed` (after the rank-1 regression test) |
+| Practice grader | `uv run bootcamp final grade` | openai / Qwen/Qwen3-235B-A22B-Instruct-2507 | Before `3/10 (30%)`; after rank-1 fix `4/10 (40%)`; after `top_k=2` `5/10 (50%)` still NOT YET |
+| Evaluation, before and after | see [docs/EVAL_REPORT.md](docs/EVAL_REPORT.md) | same Qwen | 30% → 40% on the threshold; `fa-09` PASS; `fa-05`/`fa-07` still FAIL |
 
 ## The honest limitation
 
-<!-- write this: rank 1 of docs/ISSUES.md in one sentence, and the next step
-you would take. Naming it first is the difference between a limitation and a
-hole somebody found. -->
-
-The full ranked list is in [docs/ISSUES.md](docs/ISSUES.md).
+Rank 1 of [docs/ISSUES.md](docs/ISSUES.md) (weak retrieval still calling the
+model) is fixed. Rank 2 remains: `fa-05` and `fa-07` cite an extra document.
+Next step: keep `top_k=3` if `top_k=2` drops `prompt-injection` (`citation_recall`
+failed on fa-05 in the 5/10 run), and filter citations to the allowed retrieved id
+instead of shrinking k.
 
 ## How to run it
 
@@ -74,29 +84,24 @@ git clone https://github.com/kb-dev28/my-final-assignment && cd my-final-assignm
 
 No key needed: without a `.env` it runs on the offline fake model. For a real
 model, copy `.env.example` to `.env`, fill in your provider, and
-`uv sync --extra anthropic` (or `--extra openai`).
+`uv sync --extra openai`.
 
 To hand in the final assignment, commit and push, then run
-`uv run bootcamp capstone submit --github <you>`. It runs the practice set
+`uv run bootcamp final submit --github <you>`. It runs the practice set
 first, then answers the final questions and opens the pull request.
 `--dry-run` shows the bundle without handing anything in.
 
-## Sources
-
-<!-- optional. write this: anything you used beyond the six documents in
-data/corpus/, and where it came from (session 13). Delete the section if none. -->
-
-## Credits
-
-<!-- optional. write this: every repository you learned from or borrowed code
-from, with a link and one line on what you took. Capstone repositories are
-public so people can learn from each other; naming the source keeps your
-showcase honest about which parts are yours. Delete the section if none. -->
-
 ## Rollback
 
-<!-- optional. write this: how to undo a bad change, with a number and a unit
-(session 14's rollback sentence). Delete the section if you have none yet. -->
+A rollback is going back to a named snapshot of this repo (a **git tag**), not
+a Jupyter trick. After tagging `v0.1.0`:
+
+```text
+git checkout v0.1.0 && uv run pytest
+```
+
+The previous agent answers again inside 2 minutes. Create the tag with
+`git tag v0.1.0 && git push --tags` (do not copy the course example `v0.3.1`).
 
 ---
 
