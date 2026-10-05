@@ -101,17 +101,30 @@ class YourAgent:
                 -found.index(next(s for s in found if s.chunk.doc_id == doc_id)),
             ),
         )
-        kept = tuple(c for c in result.answer.citations if c == winner)
-        if kept != result.answer.citations:
+        cited = tuple(result.answer.citations)
+        majority_hits = tuple(c for c in cited if c == winner)
+        if len(set(cited)) > 1:
+            stripped = majority_hits if majority_hits else cited[:1]
             result = AgentResult(
                 answer=ResearchAnswer(
                     answer=result.answer.answer,
-                    citations=kept if kept else (winner,),
+                    citations=stripped,
                     confidence=result.answer.confidence,
                     needs_human_review=result.answer.needs_human_review,
                 ),
                 trace=result.trace
-                + (TraceEvent("decision", f"citations kept to majority doc {winner}"),),
+                + (TraceEvent("decision", f"extra citations stripped; kept {list(stripped)}"),),
+            )
+        if result.answer.needs_human_review and not result.answer.citations:
+            result = AgentResult(
+                answer=ResearchAnswer(
+                    answer=REFUSAL_TEXT,
+                    citations=(),
+                    confidence=0.0,
+                    needs_human_review=True,
+                ),
+                trace=result.trace
+                + (TraceEvent("decision", "forced corpus refusal phrasing"),),
             )
         return result
 
