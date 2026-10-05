@@ -3,8 +3,7 @@
 <!-- write this: one sentence. What it answers, from what, and what it does when
 the sources say nothing. -->
 
-<!-- add the CI badge once the repository exists:
-![check](https://github.com/<your-github-username>/my-final-assignment/actions/workflows/check.yml/badge.svg) -->
+![check](https://github.com/kb-dev28/my-final-assignment/actions/workflows/check.yml/badge.svg)
 
 ## The problem
 
@@ -70,7 +69,7 @@ The full ranked list is in [docs/ISSUES.md](docs/ISSUES.md).
 ## How to run it
 
 ```bash
-git clone https://github.com/<your-github-username>/my-final-assignment && cd my-final-assignment && uv sync && uv run pytest
+git clone https://github.com/kb-dev28/my-final-assignment && cd my-final-assignment && uv sync && uv run pytest
 ```
 
 No key needed: without a `.env` it runs on the offline fake model. For a real
@@ -113,4 +112,4 @@ showcase honest about which parts are yours. Delete the section if none. -->
 | `docs/ISSUES.md` | The ranked issue list (session 9, kept until 14) |
 
 Built during the Dev3Pack AI Engineering bootcamp, on the course package at
-commit `85c159924a363779d9c85c9c9fddcf2b8960c4ce` of https://github.com/Gecko-Academy/dev3pack-cohort-2026-09.
+commit `81a918144aeae97db58c871c1f4e2be68cdd1bc5` of https://github.com/Gecko-Academy/dev3pack-cohort-2026-09.
