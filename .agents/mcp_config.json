@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "concord": {
+      "command": "concord-mcp",
+      "env": {
+        "CONCORD_REPO_ROOT": "/home/kb-pc-wsl/proyectos-wsl/dev3pack/ai-engineering-bootcamp/my-final-assignment",
+        "CONCORD_AGENT_KIND": "antigravity"
+      }
+    }
+  }
+}
